@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+xgboost
+scikit-learn
+pandas
+numpy>=1.21,<2.3
+scipy>=1.9,<1.13
+python-dotenv
+google-cloud-storage
+pytest
+pytest-cov
+httpx
