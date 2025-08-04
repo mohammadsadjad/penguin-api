@@ -92,3 +92,35 @@
 
 Successfully deployed and tested a machine learning model using FastAPI, Docker, GCS, and Locust. The deployment is functional and passed all required tests.
 
+1. Updated .env File
+
+GCS_BUCKET_NAME=penguin-models-2025
+GCS_BLOB_NAME=model.json
+2. Uploaded Model to GCS
+
+gsutil cp model/model.json gs://penguin-models-2025
+3. Built Docker Image Using Cloud Build
+
+gcloud builds submit --tag us-central1-docker.pkg.dev/penguin-api-project/penguin-repo/penguin-api:latest
+4. Deployed to Cloud Run
+
+gcloud run deploy penguin-apii \
+  --image=us-central1-docker.pkg.dev/penguin-api-project/penguin-repo/penguin-api:latest \
+  --platform=managed \
+  --region=us-central1 \
+  --allow-unauthenticated \
+  --set-env-vars=GCS_BUCKET_NAME=penguin-models-2025,GCS_BLOB_NAME=model.json
+5. Tested API Endpoint
+
+URL: https://penguin-apii-941721411939.us-central1.run.app
+Test Input (POST /predict):
+{
+  "bill_length_mm": 39.5,
+  "bill_depth_mm": 17.4,
+  "flipper_length_mm": 186.0,
+  "body_mass_g": 3800.0
+}
+Response:
+{
+  "prediction": "Adelie"
+}
