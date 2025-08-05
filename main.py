@@ -4,35 +4,28 @@ import xgboost as xgb
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from google.cloud import storage
-from dotenv import load_dotenv
 
-# Load environment variables from .env
-load_dotenv()
+# ✅ Use direct path from mounted secret
+SERVICE_ACCOUNT_PATH = "/gcp/gcp-key.json"
+GCS_BUCKET_NAME = "penguin-models-2025"
+GCS_BLOB_NAME = "model.json"
 
-# Load variables from .env file
-GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME")
-GCS_BLOB_NAME = os.getenv("GCS_BLOB_NAME")
-GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
-
-# Set up Google Cloud Storage client using service account
-client = storage.Client.from_service_account_json(GOOGLE_APPLICATION_CREDENTIALS)
+# Load the model from Google Cloud Storage
+client = storage.Client()
 bucket = client.get_bucket(GCS_BUCKET_NAME)
 blob = bucket.blob(GCS_BLOB_NAME)
 
-# Download the model to a temp location and load it
 model_path = "/tmp/model.json"
 blob.download_to_filename(model_path)
 
 model = xgb.XGBClassifier()
 model.load_model(model_path)
 
-# Create FastAPI app
+# Set up FastAPI
 app = FastAPI(title="Penguin Species Predictor")
 
-# Label map
 species_map = {0: "Adelie", 1: "Chinstrap", 2: "Gentoo"}
 
-# Input data structure using Pydantic
 class PenguinFeatures(BaseModel):
     bill_length_mm: float = Field(..., gt=0)
     bill_depth_mm: float = Field(..., gt=0)
@@ -53,7 +46,6 @@ def predict_species(features: PenguinFeatures):
             features.body_mass_g
         ]])
         prediction = model.predict(input_array)[0]
-        species = species_map.get(int(prediction), "Unknown")
-        return {"prediction": species}
+        return {"prediction": species_map.get(int(prediction), "Unknown")}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
